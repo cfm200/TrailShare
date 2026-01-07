@@ -4,6 +4,7 @@ module.exports = async function (context, req) {
   try {
     const body = req.body || {};
     const title = (body.title || "").trim();
+    const imageUrl = body.imageUrl;
 
     if (!title) {
       context.res = { status: 400, body: { error: "title is required" } };
@@ -19,6 +20,7 @@ module.exports = async function (context, req) {
       trailId,
       title,
       description: body.description || "",
+      imageUrl: imageUrl || null,
       location: body.location || null,
       media: body.media || [],
       createdAt: now,
