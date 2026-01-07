@@ -211,6 +211,8 @@ async function refresh() {
   );
 }
 
+
+
 /* ------------------ events ------------------ */
 
 $("createBtn")?.addEventListener("click", createTrail);
