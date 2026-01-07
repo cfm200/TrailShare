@@ -16,6 +16,10 @@ env:
 jobs:
   build:
     runs-on: windows-latest
+    defaults:
+      run:
+        working-directory: api
+
     permissions:
       contents: read #This is required for actions/checkout
       
@@ -70,4 +74,5 @@ jobs:
           app-name: 'trailshare-function-app'
           slot-name: 'Production'
           package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+
           
