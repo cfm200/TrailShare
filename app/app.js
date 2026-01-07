@@ -82,3 +82,4 @@ async function delTrail(trailId) {
 document.getElementById("createBtn").addEventListener("click", createTrail);
 document.getElementById("refreshBtn").addEventListener("click", refresh);
 refresh();
+
