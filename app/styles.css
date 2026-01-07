@@ -9,10 +9,17 @@
   --muted2: rgba(255,255,255,0.52);
   --shadow: 0 10px 30px rgba(0,0,0,0.35);
   --radius: 18px;
+
+  /* New helpers */
+  --ring: rgba(255,255,255,0.28);
+  --danger: rgba(248,113,113,1);
+  --dangerBg: rgba(248,113,113,0.16);
+  --dangerBgHover: rgba(248,113,113,0.22);
 }
 
 *{ box-sizing: border-box; }
 html,body{ height: 100%; }
+
 body{
   margin: 0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
@@ -29,7 +36,6 @@ body{
   background-image: radial-gradient(circle at 10% 15%, rgba(255,255,255,0.08), transparent 35%),
                     radial-gradient(circle at 85% 25%, rgba(255,255,255,0.06), transparent 35%),
                     radial-gradient(circle at 30% 85%, rgba(255,255,255,0.05), transparent 35%);
-  filter: blur(0px);
   opacity: 0.9;
 }
 
@@ -38,6 +44,7 @@ body{
   margin: 0 auto;
 }
 
+/* Top bar */
 .topbar{
   position: sticky;
   top: 0;
@@ -80,6 +87,7 @@ body{
   font-size: 13px;
 }
 
+/* Layout grid */
 .grid{
   display:grid;
   grid-template-columns: 1fr 1.2fr;
@@ -90,6 +98,7 @@ body{
   .grid{ grid-template-columns: 1fr; }
 }
 
+/* Cards */
 .card{
   background: linear-gradient(180deg, var(--card), rgba(255,255,255,0.04));
   border: 1px solid var(--border);
@@ -121,10 +130,21 @@ body{
   padding: 18px;
 }
 
-.form{ display:flex; flex-direction: column; gap: 14px; }
+.form{
+  display:flex;
+  flex-direction: column;
+  gap: 14px;
+}
 
-.field{ display:flex; flex-direction: column; gap: 8px; }
-.field__label{ font-size: 13px; color: var(--muted); }
+.field{
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field__label{
+  font-size: 13px;
+  color: var(--muted);
+}
 
 .input{
   width: 100%;
@@ -134,10 +154,11 @@ body{
   background: rgba(10, 16, 32, 0.55);
   color: var(--text);
   outline: none;
-  transition: border-color .15s ease, transform .05s ease;
+  transition: border-color .15s ease, box-shadow .15s ease, transform .05s ease;
 }
 .input:focus{
   border-color: rgba(255,255,255,0.35);
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
 }
 .textarea{ min-height: 110px; resize: vertical; }
 
@@ -146,6 +167,7 @@ body{
   color: var(--muted2);
 }
 
+/* File input */
 .file{
   display:flex;
   gap: 12px;
@@ -156,13 +178,18 @@ body{
   background: rgba(10, 16, 32, 0.35);
 }
 .file__input{
-  width: 140px;
-  max-width: 44vw;
+  width: 160px;
+  max-width: 60vw;
 }
-.file__meta{ display:flex; flex-direction: column; gap: 2px; }
+.file__meta{
+  display:flex;
+  flex-direction: column;
+  gap: 2px;
+}
 .file__title{ font-size: 13px; font-weight: 650; }
 .file__sub{ font-size: 12px; color: var(--muted2); }
 
+/* Optional local preview in create form */
 .previewWrap{
   margin-top: 10px;
   border-radius: 14px;
@@ -172,11 +199,12 @@ body{
 }
 .previewImg{
   width: 100%;
+  height: 220px;            /* hard cap so it never explodes */
   display:block;
-  max-height: 260px;
-  object-fit: contain;
+  object-fit: cover;
 }
 
+/* Button row */
 .row{
   display:flex;
   align-items:center;
@@ -185,18 +213,28 @@ body{
   margin-top: 4px;
 }
 
+/* Buttons */
 .btn{
   border: 1px solid rgba(255,255,255,0.14);
   background: rgba(255,255,255,0.08);
   color: var(--text);
-  padding: 10px 12px;
+  padding: 10px 14px;
   border-radius: 14px;
   cursor: pointer;
-  font-weight: 650;
-  transition: transform .06s ease, background .15s ease, border-color .15s ease;
+  font-weight: 700;
+  transition: transform .06s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
-.btn:hover{ background: rgba(255,255,255,0.11); }
-.btn:active{ transform: translateY(1px); }
+.btn:hover{
+  background: rgba(255,255,255,0.11);
+}
+.btn:active{
+  transform: translateY(1px);
+}
+.btn:focus{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255,255,255,0.08);
+}
+
 .btn--primary{
   background: linear-gradient(135deg, rgba(59,130,246,0.85), rgba(168,85,247,0.75));
   border-color: rgba(255,255,255,0.18);
@@ -208,75 +246,102 @@ body{
   background: transparent;
 }
 
+/* Status message */
 .status{
   font-size: 13px;
   color: var(--muted);
   min-height: 18px;
 }
 
+/* List */
 .list{
   display:flex;
   flex-direction: column;
   gap: 12px;
 }
 
+/* === Trail cards === */
 .trail{
   border: 1px solid rgba(255,255,255,0.12);
   background: rgba(10, 16, 32, 0.35);
   border-radius: 16px;
-  padding: 14px;
-  display:grid;
-  gap: 10px;
+  padding: 16px;               /* more breathing room */
+  display: grid;
+  gap: 12px;
+  overflow: hidden;            /* safety against huge content */
 }
+
 .trail__top{
   display:flex;
   align-items:flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
 }
+
 .trail__title{
-  font-weight: 800;
+  font-weight: 900;
   letter-spacing: 0.2px;
+  font-size: 18px;
+  line-height: 1.15;
 }
+
 .trail__meta{
   font-size: 12px;
   color: var(--muted2);
-  margin-top: 2px;
+  margin-top: 6px;
 }
+
+/* More readable description */
 .trail__desc{
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 14px;
+  line-height: 1.55;
   white-space: pre-wrap;
-}
-.trail-image {
-  width: 100%;
-  max-height: 220px;      
-  object-fit: cover;     
-  border-radius: 12px;
-  margin: 12px 0 16px 0;
-  display: block;
-  background: #000;
-}
-.trail__img img{
-  width: 100%;
-  display:block;
-  max-height: 340px;
-  object-fit: contain;
+  word-break: break-word;
 }
 
+/* ✅ BULLETPROOF IMAGE: cannot exceed card */
+.trail__img{
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.25);
+}
+
+.trail__img img,
+.trail-image{
+  width: 100%;
+  height: 220px;              /* HARD LIMIT (fixes "1000000x huge") */
+  max-width: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+/* Actions: modern + aligned */
 .trail__actions{
   display:flex;
+  justify-content: flex-end;
   gap: 10px;
-}
-.btn--danger{
-  border-color: rgba(248,113,113,0.35);
-  background: rgba(248,113,113,0.16);
-}
-.btn--danger:hover{
-  background: rgba(248,113,113,0.22);
+  padding-top: 6px;
 }
 
+/* Better looking edit/delete */
+.trail__actions .btn{
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-weight: 750;
+}
+
+.btn--danger{
+  border-color: rgba(248,113,113,0.35);
+  background: var(--dangerBg);
+}
+.btn--danger:hover{
+  background: var(--dangerBgHover);
+}
+
+/* Empty state */
 .empty{
   padding: 22px;
   border-radius: 16px;
@@ -286,9 +351,10 @@ body{
   color: var(--muted);
 }
 .empty__icon{ font-size: 28px; margin-bottom: 8px; }
-.empty__title{ font-weight: 800; color: var(--text); margin-bottom: 4px; }
+.empty__title{ font-weight: 900; color: var(--text); margin-bottom: 4px; }
 .empty__sub{ font-size: 13px; color: var(--muted); }
 
+/* Footer */
 .footer{
   padding: 22px 0 34px;
   color: var(--muted2);
