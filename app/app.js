@@ -1,11 +1,11 @@
-const apiBase = "https://trailsharewebstorage.z28.web.core.windows.net/";
+const API_BASE = "https://trailsharewebstorage.z28.web.core.windows.net/api";
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;" }[m]));
 }
 
 async function refresh() {
-  const res = await fetch(`${apiBase}/trails`);
+  const res = await fetch(`${API_BASE}/trails`);
   const data = await res.json();
 
   const list = document.getElementById("list");
@@ -39,7 +39,7 @@ async function createTrail() {
   const description = document.getElementById("description").value.trim();
   const msg = document.getElementById("msg");
 
-  const res = await fetch(`${apiBase}/trails`, {
+  const res = await fetch(`${API_BASE}/trails`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title, description })
@@ -62,7 +62,7 @@ async function editTrail(trailId) {
   if (newTitle === null) return;
   const newDesc = prompt("New description?") ?? "";
 
-  const res = await fetch(`${apiBase}/trails/${encodeURIComponent(trailId)}`, {
+  const res = await fetch(`${API_BASE}/trails/${encodeURIComponent(trailId)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ title: newTitle, description: newDesc })
@@ -74,7 +74,7 @@ async function editTrail(trailId) {
 
 async function delTrail(trailId) {
   if (!confirm(`Delete ${trailId}?`)) return;
-  const res = await fetch(`${apiBase}/trails/${encodeURIComponent(trailId)}`, { method: "DELETE" });
+  const res = await fetch(`${API_BASE}/trails/${encodeURIComponent(trailId)}`, { method: "DELETE" });
   if (!res.ok && res.status !== 204) alert("Delete failed");
   await refresh();
 }
