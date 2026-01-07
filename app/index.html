@@ -1,29 +1,107 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TrailShare MVP</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="./styles.css" />
 </head>
+
 <body>
-  <h1>TrailShare MVP</h1>
+  <div class="bg"></div>
 
-  <section class="card">
-    <h2>Create trail</h2>
-    <label>Title</label>
-    <input id="title" placeholder="e.g., Cave Hill Loop" />
-    <label>Description</label>
-    <textarea id="description" placeholder="Short description"></textarea>
-    <button id="createBtn">Create</button>
-    <p id="msg"></p>
-  </section>
+  <header class="topbar">
+    <div class="container topbar__inner">
+      <div class="brand">
+        <div class="brand__logo">TS</div>
+        <div>
+          <div class="brand__name">TrailShare</div>
+          <div class="brand__tag">Create and share trails with photos</div>
+        </div>
+      </div>
 
-  <section class="card">
-    <h2>All trails</h2>
-    <button id="refreshBtn">Refresh</button>
-    <div id="list"></div>
-  </section>
+      <div class="topbar__actions">
+        <button id="refreshBtn" class="btn btn--ghost" type="button">Refresh</button>
+      </div>
+    </div>
+  </header>
 
-  <script src="app.js"></script>
-</body>
-</html>
+  <main class="container grid">
+    <!-- Left: Create -->
+    <section class="card">
+      <div class="card__header">
+        <h2>Create a trail</h2>
+        <p>Add a title, description, and an optional image.</p>
+      </div>
+
+      <div class="card__body">
+        <div class="form">
+          <label class="field">
+            <span class="field__label">Title</span>
+            <input id="title" class="input" type="text" placeholder="e.g. The Mourne Walk" maxlength="80" />
+          </label>
+
+          <label class="field">
+            <span class="field__label">Description</span>
+            <textarea id="description" class="input textarea" placeholder="What makes this trail special?" maxlength="500"></textarea>
+            <div class="hint">Tip: Keep it short and useful. (max 500 chars)</div>
+          </label>
+
+          <label class="field">
+            <span class="field__label">Image (optional)</span>
+            <div class="file">
+              <input id="image" class="file__input" type="file" accept="image/*" />
+              <div class="file__meta">
+                <div class="file__title">Choose an image</div>
+                <div class="file__sub">PNG/JPG recommended · up to a few MB</div>
+              </div>
+            </div>
+            <div id="previewWrap" class="previewWrap" hidden>
+              <img id="previewImg" class="previewImg" alt="Selected image preview" />
+            </div>
+          </label>
+
+          <div class="row">
+            <button id="createBtn" class="btn btn--primary" type="button">
+              Create trail
+            </button>
+
+            <div id="msg" class="status" role="status" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right: List -->
+    <section class="card">
+      <div class="card__header card__header--row">
+        <div>
+          <h2>All trails</h2>
+          <p>Browse, edit, or delete existing trails.</p>
+        </div>
+        <button id="refreshBtn2" class="btn btn--ghost" type="button">Refresh</button>
+      </div>
+
+      <div class="card__body">
+        <div id="list" class="list"></div>
+        <div id="empty" class="empty" hidden>
+          <div class="empty__icon">🧭</div>
+          <div class="empty__title">No trails yet</div>
+          <div class="empty__sub">Create your first trail using the form on the left.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer__inner">
+      <span>TrailShare MVP</span>
+      <span class="dot">•</span>
+      <span>Azure Functions + Cosmos DB + Blob Storage</span>
+    </div>
+  </footer>
+
+  <script src="./app.js"></script>
+  <script>
+    // Optional UX: image preview + wire the second refresh button
+    const fileInput = document.getEle
