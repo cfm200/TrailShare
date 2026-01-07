@@ -3,41 +3,41 @@ const { getContainer } = require("../shared/cosmos");
 module.exports = async function (context, req) {
   try {
     const body = req.body || {};
-    const title = (body.title || "").trim();
-    const imageUrl = body.imageUrl;
 
-    if (!title) {
-      context.res = { status: 400, body: { error: "title is required" } };
-      return;
-    }
-    if (!title || title.trim().length < 2 || title.length > 80) {
+    const title = (body.title || "").trim();
+    const description = (body.description || "").trim();
+
+    // allow optional imageUrl (string) and media (array of strings)
+    const imageUrl = body.imageUrl ? String(body.imageUrl) : null;
+    const media = Array.isArray(body.media) ? body.media.map(String) : [];
+
+    // --- Validation (simple + safe) ---
+    if (title.length < 2 || title.length > 80) {
       context.res = { status: 400, body: { error: "Title must be 2-80 characters." } };
       return;
     }
-    if (description && description.length > 500) {
+    if (description.length > 500) {
       context.res = { status: 400, body: { error: "Description must be 500 characters or fewer." } };
       return;
     }
-    if (imageUrl && typeof imageUrl !== "string") {
-      context.res = { status: 400, body: { error: "imageUrl must be a string." } };
+    if (imageUrl && imageUrl.length > 1000) {
+      context.res = { status: 400, body: { error: "imageUrl is too long." } };
       return;
     }
-    
 
     const now = new Date().toISOString();
-    const trailId = body.trailId || `trail_${Date.now()}`;
+    const trailId = body.trailId ? String(body.trailId) : `trail_${Date.now()}`;
 
-    // IMPORTANT: id == trailId (makes point reads/deletes easy)
+    // IMPORTANT: id = trailId, and partitionKey = /trailId in your container
     const doc = {
       id: trailId,
       trailId,
       title,
-      description: body.description || "",
-      imageUrl: imageUrl || null,
-      location: body.location || null,
-      media: body.media || [],
+      description,
+      imageUrl,
+      media,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
     };
 
     const container = await getContainer();
@@ -45,7 +45,7 @@ module.exports = async function (context, req) {
 
     context.res = { status: 201, body: doc };
   } catch (err) {
-    context.log(err);
+    context.log("CreateTrail error:", err);
     context.res = { status: 500, body: { error: "Server error", detail: err.message } };
   }
 };
