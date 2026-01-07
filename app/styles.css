@@ -249,12 +249,14 @@ body{
   line-height: 1.35;
   white-space: pre-wrap;
 }
-.trail__img{
+.trail-image {
   width: 100%;
-  border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(0,0,0,0.2);
-  overflow: hidden;
+  max-height: 220px;      
+  object-fit: cover;     
+  border-radius: 12px;
+  margin: 12px 0 16px 0;
+  display: block;
+  background: #000;
 }
 .trail__img img{
   width: 100%;

@@ -1,107 +1,189 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
   <title>TrailShare MVP</title>
-  <link rel="stylesheet" href="./styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: radial-gradient(1200px 600px at 10% 10%, #2b2f77, #0b1020);
+      --card: rgba(255,255,255,0.06);
+      --border: rgba(255,255,255,0.12);
+      --text: #e9ecff;
+      --muted: #aab0ff;
+      --primary: #7c7cff;
+      --danger: #ff6b6b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    header h1 {
+      font-size: 1.6rem;
+      margin: 0;
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+
+    .card h2 {
+      margin: 0 0 12px 0;
+      font-size: 1.2rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,0.2);
+      color: var(--text);
+      margin-bottom: 14px;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.5;
+    }
+
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+
+    .btn-danger {
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+    }
+
+    button:hover {
+      opacity: 0.85;
+    }
+
+    .trail-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .trail-meta {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .trail-desc {
+      line-height: 1.6;
+      margin-bottom: 14px;
+    }
+
+    .trail-image {
+      max-width: 100%;
+      max-height: 260px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 14px;
+      display: block;
+    }
+
+    .trail-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 40px;
+    }
+  </style>
 </head>
 
 <body>
-  <div class="bg"></div>
+  <div class="container">
 
-  <header class="topbar">
-    <div class="container topbar__inner">
-      <div class="brand">
-        <div class="brand__logo">TS</div>
-        <div>
-          <div class="brand__name">TrailShare</div>
-          <div class="brand__tag">Create and share trails with photos</div>
-        </div>
-      </div>
+    <header>
+      <h1>TrailShare</h1>
+      <button class="btn-ghost" onclick="refresh()">Refresh</button>
+    </header>
 
-      <div class="topbar__actions">
-        <button id="refreshBtn" class="btn btn--ghost" type="button">Refresh</button>
-      </div>
+    <div class="card">
+      <h2>Create trail</h2>
+
+      <label>Title</label>
+      <input id="title" />
+
+      <label>Description</label>
+      <textarea id="description"></textarea>
+
+      <label>Image (optional)</label>
+      <input type="file" id="image" accept="image/*" />
+
+      <button class="btn-primary" onclick="createTrail()">Create trail</button>
+      <div id="msg"></div>
     </div>
-  </header>
 
-  <main class="container grid">
-    <!-- Left: Create -->
-    <section class="card">
-      <div class="card__header">
-        <h2>Create a trail</h2>
-        <p>Add a title, description, and an optional image.</p>
-      </div>
-
-      <div class="card__body">
-        <div class="form">
-          <label class="field">
-            <span class="field__label">Title</span>
-            <input id="title" class="input" type="text" placeholder="e.g. The Mourne Walk" maxlength="80" />
-          </label>
-
-          <label class="field">
-            <span class="field__label">Description</span>
-            <textarea id="description" class="input textarea" placeholder="What makes this trail special?" maxlength="500"></textarea>
-            <div class="hint">Tip: Keep it short and useful. (max 500 chars)</div>
-          </label>
-
-          <label class="field">
-            <span class="field__label">Image (optional)</span>
-            <div class="file">
-              <input id="image" class="file__input" type="file" accept="image/*" />
-              <div class="file__meta">
-                <div class="file__title">Choose an image</div>
-                <div class="file__sub">PNG/JPG recommended · up to a few MB</div>
-              </div>
-            </div>
-            <div id="previewWrap" class="previewWrap" hidden>
-              <img id="previewImg" class="previewImg" alt="Selected image preview" />
-            </div>
-          </label>
-
-          <div class="row">
-            <button id="createBtn" class="btn btn--primary" type="button">
-              Create trail
-            </button>
-
-            <div id="msg" class="status" role="status" aria-live="polite"></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Right: List -->
-    <section class="card">
-      <div class="card__header card__header--row">
-        <div>
-          <h2>All trails</h2>
-          <p>Browse, edit, or delete existing trails.</p>
-        </div>
-        <button id="refreshBtn2" class="btn btn--ghost" type="button">Refresh</button>
-      </div>
-
-      <div class="card__body">
-        <div id="list" class="list"></div>
-        <div id="empty" class="empty" hidden>
-          <div class="empty__icon">🧭</div>
-          <div class="empty__title">No trails yet</div>
-          <div class="empty__sub">Create your first trail using the form on the left.</div>
-        </div>
-      </div>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <div class="container footer__inner">
-      <span>TrailShare MVP</span>
-      <span class="dot">•</span>
-      <span>Azure Functions + Cosmos DB + Blob Storage</span>
+    <div class="card">
+      <h2>All trails</h2>
+      <div id="list"></div>
     </div>
-  </footer>
 
-  <script src="./app.js"></script>
-  <script>
-    // Optional UX: image preview + wire the second refresh button
-    const fileInput = document.getEle
+    <footer>
+      TrailShare MVP · Azure Functions + Cosmos DB + Blob Storage
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
