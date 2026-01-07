@@ -10,6 +10,19 @@ module.exports = async function (context, req) {
       context.res = { status: 400, body: { error: "title is required" } };
       return;
     }
+    if (!title || title.trim().length < 2 || title.length > 80) {
+      context.res = { status: 400, body: { error: "Title must be 2-80 characters." } };
+      return;
+    }
+    if (description && description.length > 500) {
+      context.res = { status: 400, body: { error: "Description must be 500 characters or fewer." } };
+      return;
+    }
+    if (imageUrl && typeof imageUrl !== "string") {
+      context.res = { status: 400, body: { error: "imageUrl must be a string." } };
+      return;
+    }
+    
 
     const now = new Date().toISOString();
     const trailId = body.trailId || `trail_${Date.now()}`;
