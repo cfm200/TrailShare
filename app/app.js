@@ -1,4 +1,4 @@
-const API_BASE = "https://trailsharewebstorage.z28.web.core.windows.net/api";
+const API_BASE = "trailshare-function-app-dfa7adbdhxfehjek.francecentral-01.azurewebsites.net/api";
 
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;" }[m]));
