@@ -1,0 +1,9 @@
+{
+    "name": "trailshare-api",
+    "version": "1.0.0",
+    "private": true,
+    "dependencies": {
+      "@azure/cosmos": "^4.0.0"
+    }
+  }
+  

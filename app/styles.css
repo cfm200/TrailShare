@@ -1,0 +1,7 @@
+body { font-family: system-ui, Arial; margin: 24px; max-width: 900px; }
+.card { border: 1px solid #ddd; border-radius: 12px; padding: 16px; margin: 16px 0; }
+input, textarea { width: 100%; padding: 8px; margin: 6px 0 12px; }
+button { padding: 10px 14px; border-radius: 10px; border: 1px solid #333; cursor: pointer; }
+.trail { border-top: 1px solid #eee; padding: 12px 0; }
+.small { color: #666; font-size: 12px; }
+.row { display: flex; gap: 8px; margin-top: 10px; }
