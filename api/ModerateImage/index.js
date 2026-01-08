@@ -1,97 +1,72 @@
-const axios = require("axios");
-
 module.exports = async function (context, req) {
+  // Always return JSON, always include debug
+  const debug = {
+    hasBody: !!req.body,
+    bodyKeys: req.body ? Object.keys(req.body) : [],
+    hasEndpointEnv: !!process.env.CONTENT_SAFETY_ENDPOINT,
+    hasKeyEnv: !!process.env.CONTENT_SAFETY_KEY,
+    endpointPreview: process.env.CONTENT_SAFETY_ENDPOINT
+      ? String(process.env.CONTENT_SAFETY_ENDPOINT).slice(0, 40) + "..."
+      : null,
+    nodeVersion: process.version
+  };
+
   try {
-    // Accept BOTH formats:
-    // 1) { "imageUrl": "https://..." }
-    // 2) { "image": { "url": "https://..." } }
-    const imageUrl =
-      req.body?.imageUrl ||
-      req.body?.image?.url ||
-      req.body?.url ||
-      null;
+    const imageUrl = req.body?.imageUrl || req.body?.image?.url || null;
 
     if (!imageUrl) {
-      context.res = {
-        status: 400,
-        body: { error: "Missing imageUrl. Send { imageUrl: 'https://...' }" }
-      };
+      context.res = { status: 400, body: { error: "Missing imageUrl", debug } };
       return;
     }
 
-    const endpoint = process.env.CONTENT_SAFETY_ENDPOINT; // e.g. https://<name>.cognitiveservices.azure.com
+    const endpoint = process.env.CONTENT_SAFETY_ENDPOINT;
     const key = process.env.CONTENT_SAFETY_KEY;
 
     if (!endpoint || !key) {
       context.res = {
         status: 500,
-        body: {
-          error: "Missing environment variables",
-          detail: "Set CONTENT_SAFETY_ENDPOINT and CONTENT_SAFETY_KEY in Function App settings"
-        }
+        body: { error: "Missing CONTENT_SAFETY_ENDPOINT or CONTENT_SAFETY_KEY", debug }
       };
       return;
     }
 
-    // Correct Azure AI Content Safety Image Analyze endpoint
-    const url = `${endpoint.replace(/\/$/, "")}/contentsafety/image:analyze?api-version=2023-10-01`;
+    const apiUrl =
+      endpoint.replace(/\/+$/, "") +
+      "/contentsafety/image:analyze?api-version=2023-10-01";
 
-    // ✅ Correct request body for Content Safety
-    const payload = {
-      image: { url: imageUrl }
-    };
+    const payload = { image: { url: imageUrl } };
 
-    const resp = await axios.post(url, payload, {
+    const r = await fetch(apiUrl, {
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Ocp-Apim-Subscription-Key": key
       },
-      timeout: 15000
+      body: JSON.stringify(payload)
     });
 
-    // Response typically contains categoryAnalysis with severities
-    // We will compute a simple "allowed" decision:
-    const analysis = resp.data?.categoriesAnalysis || resp.data?.categoryAnalysis || [];
-    const byCategory = {};
-    for (const item of analysis) {
-      // item.category: "Hate" | "Sexual" | "Violence" | "SelfHarm"
-      // item.severity: 0,2,4,6... depending on API
-      if (item?.category) byCategory[item.category] = item.severity;
-    }
+    const text = await r.text(); // don't assume JSON
+    let data = null;
+    try { data = JSON.parse(text); } catch { data = { raw: text }; }
 
-    // Threshold — tweak if you want:
-    // 0 = safe, higher = more severe. We'll reject at >= 2.
-    const threshold = 2;
-    const failing = Object.entries(byCategory)
-      .filter(([, severity]) => typeof severity === "number" && severity >= threshold)
-      .map(([cat, sev]) => ({ category: cat, severity: sev }));
-
-    const allowed = failing.length === 0;
-
+    // Return upstream details so we can see the real reason
     context.res = {
-      status: 200,
+      status: r.ok ? 200 : 502,
       body: {
-        allowed,
-        threshold,
-        categories: byCategory,
-        failing
+        ok: r.ok,
+        upstreamStatus: r.status,
+        upstreamResponse: data,
+        debug
       }
     };
   } catch (err) {
-    // VERY IMPORTANT: return the upstream error details so you can see what's wrong
-    const status = err.response?.status || 500;
-    const data = err.response?.data || null;
-
-    context.log("Moderate-image error:", err.message);
-    if (data) context.log("Upstream data:", JSON.stringify(data));
-
     context.res = {
-      status: 502, // upstream error
+      status: 500,
       body: {
-        error: "Content Safety call failed",
-        message: err.message,
-        upstreamStatus: status,
-        upstreamData: data
+        error: "Function crashed",
+        message: err?.message || String(err),
+        stack: err?.stack || null,
+        debug
       }
     };
   }
