@@ -8,11 +8,13 @@ module.exports = async function (context, req) {
     const description = (body.description || "").trim();
     const location = (body.location || "").trim();
 
-    // allow optional imageUrl (string) and media (array of strings)
-    const imageUrl = body.imageUrl ? String(body.imageUrl) : null;
+    // ✅ STORE IMAGE PATH, NOT SAS URL
+    // Example: media/trail_123/photo.jpg
+    const imagePath = body.imagePath ? String(body.imagePath) : null;
+
     const media = Array.isArray(body.media) ? body.media.map(String) : [];
 
-    // --- Validation (simple + safe) ---
+    // --- Validation ---
     if (title.length < 2 || title.length > 80) {
       context.res = { status: 400, body: { error: "Title must be 2-80 characters." } };
       return;
@@ -25,22 +27,22 @@ module.exports = async function (context, req) {
       context.res = { status: 400, body: { error: "Location must be 120 characters or fewer." } };
       return;
     }
-    if (imageUrl && imageUrl.length > 1000) {
-      context.res = { status: 400, body: { error: "imageUrl is too long." } };
+    if (imagePath && imagePath.length > 500) {
+      context.res = { status: 400, body: { error: "imagePath is too long." } };
       return;
     }
 
     const now = new Date().toISOString();
     const trailId = body.trailId ? String(body.trailId) : `trail_${Date.now()}`;
 
-    // IMPORTANT: id = trailId, and partitionKey = /trailId in your container
+    // IMPORTANT: id = trailId, partition key = /trailId
     const doc = {
       id: trailId,
       trailId,
       title,
       description,
-      location,            // ✅ ADDED
-      imageUrl,
+      location,
+      imagePath,        // ✅ FIXED
       media,
       createdAt: now,
       updatedAt: now,

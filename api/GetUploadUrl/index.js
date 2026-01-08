@@ -19,16 +19,12 @@ module.exports = async function (context, req) {
     const containerName = process.env.BLOB_CONTAINER_NAME || "media";
 
     if (!accountName || !accountKey) {
-      context.res = {
-        status: 500,
-        body: { error: "Missing BLOB_ACCOUNT_NAME or BLOB_ACCOUNT_KEY" }
-      };
+      context.res = { status: 500, body: { error: "Blob config missing" } };
       return;
     }
 
-    // Make filename safe + unique
     const safeName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    const blobName = `${Date.now()}_${safeName}`;
+    const blobName = `${Date.now()}_${safeName}`; // ✅ permanent path
 
     const cred = new StorageSharedKeyCredential(accountName, accountKey);
     const blobService = new BlobServiceClient(
@@ -39,12 +35,10 @@ module.exports = async function (context, req) {
     const containerClient = blobService.getContainerClient(containerName);
     const blobClient = containerClient.getBlockBlobClient(blobName);
 
-    // SAS valid for 60 mins (good for demo + viewing after upload)
     const startsOn = new Date(Date.now() - 60 * 1000);
-    const expiresOn = new Date(Date.now() + 60 * 60 * 1000);
+    const expiresOn = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
-    // IMPORTANT: include READ + CREATE + WRITE
-    const permissions = BlobSASPermissions.parse("rcw");
+    const permissions = BlobSASPermissions.parse("cw"); // create + write ONLY
 
     const sas = generateBlobSASQueryParameters(
       {
@@ -58,15 +52,11 @@ module.exports = async function (context, req) {
       cred
     ).toString();
 
-    const sasUrl = `${blobClient.url}?${sas}`;
-
     context.res = {
       status: 200,
       body: {
-        uploadUrl: sasUrl,
-        imageUrl: sasUrl, // use this for <img src="">
-        blobName,
-        expiresOn: expiresOn.toISOString()
+        uploadUrl: `${blobClient.url}?${sas}`, // used once
+        imagePath: blobName                // ✅ STORE THIS IN COSMOS
       }
     };
   } catch (err) {

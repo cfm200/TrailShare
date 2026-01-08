@@ -1,4 +1,5 @@
-const API_BASE = "https://trailshare-function-app-dfa7adbdhxfehjek.francecentral-01.azurewebsites.net/api";
+const API_BASE =
+  "https://trailshare-function-app-dfa7adbdhxfehjek.francecentral-01.azurewebsites.net/api";
 
 let latestTrails = [];
 
@@ -33,9 +34,91 @@ function setMsg(text = "", isError = false) {
   el.style.color = isError ? "#fca5a5" : "";
 }
 
+/* ---------- blob upload ---------- */
+async function uploadSelectedImage() {
+  const fileInput = document.getElementById("image");
+  const file = fileInput?.files?.[0];
+  if (!file) return null;
+
+  // 1️⃣ Ask API for WRITE SAS + imagePath
+  const sasRes = await fetch(`${API_BASE}/upload-url`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      fileName: file.name,
+      contentType: file.type,
+    }),
+  });
+
+  if (!sasRes.ok) {
+    const err = await sasRes.text().catch(() => "");
+    throw new Error(`Failed to get upload URL: ${err}`);
+  }
+
+  const { uploadUrl, imagePath } = await sasRes.json();
+
+  // 2️⃣ Upload image directly to Blob Storage
+  const putRes = await fetch(uploadUrl, {
+    method: "PUT",
+    headers: {
+      "x-ms-blob-type": "BlockBlob",
+      "Content-Type": file.type,
+    },
+    body: file,
+  });
+
+  if (!putRes.ok) {
+    throw new Error("Blob upload failed");
+  }
+
+  return imagePath; // ✅ permanent reference
+}
+
+/* ---------- rendering ---------- */
+function renderTrailCard(t) {
+  const card = document.createElement("div");
+  card.className = "trail";
+
+  card.innerHTML = `
+    <h3 class="trail__title">${escapeHtml(t.title)}</h3>
+    <p class="trail__meta">
+      ${t.location ? `📍 ${escapeHtml(t.location)} · ` : ""}
+      Uploaded ${getDisplayDate(t)}
+    </p>
+    <p class="trail__desc">${escapeHtml(t.description || "")}</p>
+    ${
+      t.imageUrl
+        ? `
+      <div class="trail__img">
+        <img src="${t.imageUrl}" loading="lazy" />
+      </div>`
+        : ""
+    }
+    <div class="trail__actions">
+      <button class="btn btn--ghost">Edit</button>
+      <button class="btn btn--danger">Delete</button>
+    </div>
+  `;
+
+  card.onclick = () => openTrailModal(t);
+
+  card.querySelector(".btn--ghost").onclick = (e) => {
+    e.stopPropagation();
+    editTrail(t.trailId);
+  };
+
+  card.querySelector(".btn--danger").onclick = (e) => {
+    e.stopPropagation();
+    delTrail(t.trailId);
+  };
+
+  return card;
+}
+
 /* ---------- modal ---------- */
 function openTrailModal(trail) {
-  document.getElementById("modalTitle").textContent = trail.title || "(untitled)";
+  document.getElementById("modalTitle").textContent =
+    trail.title || "(untitled)";
 
   const meta = [];
   if (trail.location) meta.push(`📍 ${trail.location}`);
@@ -43,7 +126,8 @@ function openTrailModal(trail) {
   if (when) meta.push(`Uploaded ${when}`);
   document.getElementById("modalMeta").textContent = meta.join(" · ");
 
-  document.getElementById("modalDesc").textContent = trail.description || "";
+  document.getElementById("modalDesc").textContent =
+    trail.description || "";
 
   const imgWrap = document.getElementById("modalImageWrap");
   const img = document.getElementById("modalImage");
@@ -70,68 +154,6 @@ function openTrailModal(trail) {
 
 function closeTrailModal() {
   document.getElementById("trailModal").classList.add("hidden");
-}
-
-/* ---------- blob upload ---------- */
-async function uploadSelectedImage() {
-  const file = document.getElementById("image")?.files?.[0];
-  if (!file) return null;
-
-  const sasRes = await fetch(`${API_BASE}/upload-url`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fileName: file.name, contentType: file.type }),
-  });
-
-  const { uploadUrl, imageUrl } = await sasRes.json();
-
-  await fetch(uploadUrl, {
-    method: "PUT",
-    headers: {
-      "x-ms-blob-type": "BlockBlob",
-      "Content-Type": file.type,
-    },
-    body: file,
-  });
-
-  return imageUrl;
-}
-
-/* ---------- rendering ---------- */
-function renderTrailCard(t) {
-  const card = document.createElement("div");
-  card.className = "trail";
-
-  card.innerHTML = `
-    <h3 class="trail__title">${escapeHtml(t.title)}</h3>
-    <p class="trail__meta">
-      ${t.location ? `📍 ${escapeHtml(t.location)} · ` : ""}
-      Uploaded ${getDisplayDate(t)}
-    </p>
-    <p class="trail__desc">${escapeHtml(t.description || "")}</p>
-    ${t.imageUrl ? `
-      <div class="trail__img">
-        <img src="${t.imageUrl}" loading="lazy" />
-      </div>` : ""}
-    <div class="trail__actions">
-      <button class="btn btn--ghost">Edit</button>
-      <button class="btn btn--danger">Delete</button>
-    </div>
-  `;
-
-  card.onclick = () => openTrailModal(t);
-
-  card.querySelector(".btn--ghost").onclick = (e) => {
-    e.stopPropagation();
-    editTrail(t.trailId);
-  };
-
-  card.querySelector(".btn--danger").onclick = (e) => {
-    e.stopPropagation();
-    delTrail(t.trailId);
-  };
-
-  return card;
 }
 
 /* ---------- API ---------- */
@@ -161,13 +183,20 @@ async function createTrail() {
       return;
     }
 
-    let imageUrl = null;
-    if (image.files.length) imageUrl = await uploadSelectedImage();
+    let imagePath = null;
+    if (image.files.length) {
+      imagePath = await uploadSelectedImage();
+    }
 
     await fetch(`${API_BASE}/trails`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, description, location, imageUrl }),
+      body: JSON.stringify({
+        title,
+        description,
+        location,
+        imagePath, // ✅ FIXED
+      }),
     });
 
     titleEl.value = "";
@@ -178,19 +207,25 @@ async function createTrail() {
     setMsg("Created!");
     refresh();
   } catch (e) {
-    setMsg("Failed to create trail", true);
+    setMsg(e.message || "Failed to create trail", true);
   }
 }
 
 async function editTrail(trailId) {
-  const t = latestTrails.find(x => x.trailId === trailId);
+  const t = latestTrails.find((x) => x.trailId === trailId);
   if (!t) return;
 
   const title = prompt("New title?", t.title);
   if (title === null) return;
 
-  const description = prompt("New description?", t.description || "") ?? "";
-  const location = prompt("New location?", t.location || "") ?? "";
+  const description = prompt(
+    "New description?",
+    t.description || ""
+  ) ?? "";
+  const location = prompt(
+    "New location?",
+    t.location || ""
+  ) ?? "";
 
   await fetch(`${API_BASE}/trails/${trailId}`, {
     method: "PUT",
@@ -203,7 +238,6 @@ async function editTrail(trailId) {
 
 async function delTrail(trailId) {
   if (!confirm("Delete this trail?")) return;
-
   await fetch(`${API_BASE}/trails/${trailId}`, { method: "DELETE" });
   refresh();
 }
