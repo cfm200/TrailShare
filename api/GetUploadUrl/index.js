@@ -56,7 +56,7 @@ module.exports = async function (context, req) {
       status: 200,
       body: {
         uploadUrl: `${blobClient.url}?${sas}`, // used once
-        imagePath: blobName                // ✅ STORE THIS IN COSMOS
+        imagePath: blobName               
       }
     };
   } catch (err) {
