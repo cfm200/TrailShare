@@ -1,27 +1,31 @@
-const API_BASE = "https://trailshare-function-app-dfa7adbdhxfehjek.francecentral-01.azurewebsites.net/api";
+const API_BASE =
+  "https://trailshare-function-app-dfa7adbdhxfehjek.francecentral-01.azurewebsites.net/api";
 
-/* ---------- helpers ---------- */
+/* ---------------- helpers ---------------- */
 function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, m => ({
-    "&": "&amp;", "<": "&lt;", ">": "&gt;",
-    "\"": "&quot;", "'": "&#039;"
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
   }[m]));
 }
 
 function formatDate(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-GB", {
-    day: "2-digit", month: "short", year: "numeric"
+  return new Date(iso).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
   });
 }
 
-/* ---------- IMAGE UPLOAD ---------- */
+/* ---------------- image upload ---------------- */
 async function uploadSelectedImage() {
   const input = document.getElementById("image");
   const file = input?.files?.[0];
   if (!file) return null;
 
-  // 1) request upload URL
   const res = await fetch(`${API_BASE}/upload-url`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -32,9 +36,9 @@ async function uploadSelectedImage() {
   });
 
   if (!res.ok) throw new Error("Failed to get upload URL");
+
   const { uploadUrl, imagePath } = await res.json();
 
-  // 2) upload file to blob
   const put = await fetch(uploadUrl, {
     method: "PUT",
     headers: {
@@ -46,10 +50,10 @@ async function uploadSelectedImage() {
 
   if (!put.ok) throw new Error("Blob upload failed");
 
-  return imagePath; // IMPORTANT
+  return imagePath;
 }
 
-/* ---------- CRUD ---------- */
+/* ---------------- CRUD ---------------- */
 async function createTrail() {
   const title = document.getElementById("title").value.trim();
   const location = document.getElementById("location").value.trim();
@@ -65,12 +69,7 @@ async function createTrail() {
     const res = await fetch(`${API_BASE}/trails`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title,
-        location,
-        description,
-        imagePath
-      })
+      body: JSON.stringify({ title, location, description, imagePath })
     });
 
     if (!res.ok) {
@@ -85,7 +84,7 @@ async function createTrail() {
     document.getElementById("description").value = "";
     document.getElementById("image").value = "";
 
-    await refresh();
+    refresh();
   } catch (e) {
     msg.textContent = e.message;
   }
@@ -103,38 +102,118 @@ async function refresh() {
     return;
   }
 
-  trails.forEach(t => {
-    const div = document.createElement("div");
-    div.className = "trail";
+  trails.forEach(trail => {
+    const card = document.createElement("div");
+    card.className = "trail";
 
-    div.innerHTML = `
-      <h3>${escapeHtml(t.title)}</h3>
-      <div class="meta">📍 ${escapeHtml(t.location || "Unknown")} · Uploaded ${formatDate(t.createdAt)}</div>
-      <p>${escapeHtml(t.description || "")}</p>
+    card.innerHTML = `
+      <h3 class="trail__title">${escapeHtml(trail.title)}</h3>
 
-      ${t.imageUrl ? `<img src="${t.imageUrl}" alt="Trail image">` : ""}
+      <div class="trail__meta">
+        📍 ${escapeHtml(trail.location || "Unknown")}
+        · Uploaded ${formatDate(trail.createdAt)}
+      </div>
 
-      <div class="row">
-        <button data-edit="${t.trailId}">Edit</button>
-        <button data-del="${t.trailId}" class="danger">Delete</button>
+      <p class="trail__desc">${escapeHtml(trail.description || "")}</p>
+
+      ${
+        trail.imageUrl
+          ? `
+            <div class="trail__img">
+              <img src="${trail.imageUrl}" alt="Trail image">
+            </div>
+          `
+          : ""
+      }
+
+      <div class="trail__actions">
+        <button class="btn" data-edit="${trail.trailId}">Edit</button>
+        <button class="btn btn--danger" data-del="${trail.trailId}">Delete</button>
       </div>
     `;
 
-    list.appendChild(div);
+    // Card click → modal (buttons excluded)
+    card.addEventListener("click", e => {
+      if (e.target.closest("button")) return;
+      openTrailModal(trail);
+    });
+
+    list.appendChild(card);
   });
 
   list.querySelectorAll("[data-del]").forEach(b =>
     b.onclick = () => deleteTrail(b.dataset.del)
   );
+
+  list.querySelectorAll("[data-edit]").forEach(b =>
+    b.onclick = () => editTrail(b.dataset.edit)
+  );
 }
 
-async function deleteTrail(id) {
-  if (!confirm("Delete this trail?")) return;
-  await fetch(`${API_BASE}/trails/${encodeURIComponent(id)}`, { method: "DELETE" });
+async function editTrail(trailId) {
+  const title = prompt("New title?");
+  if (title === null) return;
+
+  const description = prompt("New description?") ?? "";
+
+  await fetch(`${API_BASE}/trails/${encodeURIComponent(trailId)}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ title, description })
+  });
+
   refresh();
 }
 
-/* ---------- INIT ---------- */
+async function deleteTrail(trailId) {
+  if (!confirm("Delete this trail?")) return;
+  await fetch(`${API_BASE}/trails/${encodeURIComponent(trailId)}`, {
+    method: "DELETE"
+  });
+  refresh();
+}
+
+/* ---------------- MODAL (matches index.html IDs exactly) ---------------- */
+function openTrailModal(trail) {
+  const modal = document.getElementById("trailModal");
+  const title = document.getElementById("modalTitle");
+  const meta = document.getElementById("modalMeta");
+  const imageWrap = document.getElementById("modalImageWrap");
+  const image = document.getElementById("modalImage");
+  const desc = document.getElementById("modalDesc");
+
+  title.textContent = trail.title;
+  meta.textContent =
+    `📍 ${trail.location || "Unknown"} · Uploaded ${formatDate(trail.createdAt)}`;
+
+  if (trail.imageUrl) {
+    image.src = trail.imageUrl;
+    imageWrap.classList.remove("hidden");
+  } else {
+    imageWrap.classList.add("hidden");
+    image.src = "";
+  }
+
+  desc.textContent = trail.description || "";
+
+  modal.classList.remove("hidden");
+
+  // modal buttons
+  document.getElementById("modalEdit").onclick =
+    () => editTrail(trail.trailId);
+
+  document.getElementById("modalDelete").onclick =
+    () => deleteTrail(trail.trailId);
+}
+
+/* ---------------- init ---------------- */
 document.getElementById("createBtn").onclick = createTrail;
 document.getElementById("refreshBtn").onclick = refresh;
+
+document.getElementById("closeModal").onclick =
+  () => document.getElementById("trailModal").classList.add("hidden");
+
+document.querySelector(".modal__backdrop").onclick =
+  () => document.getElementById("trailModal").classList.add("hidden");
+
 refresh();
