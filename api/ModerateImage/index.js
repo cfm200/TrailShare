@@ -13,7 +13,15 @@ module.exports = async function (context, req) {
     }
 
     const endpoint = process.env.CONTENT_SAFETY_ENDPOINT;
-    const apiKey = process.env.CONTENT_SAFETY_KEY;
+    const key = process.env.CONTENT_SAFETY_KEY;
+
+    if (!endpoint || !key) {
+      context.res = {
+        status: 500,
+        body: { error: "Content Safety env vars not set" }
+      };
+      return;
+    }
 
     const response = await axios.post(
       `${endpoint}/contentsafety/image:analyze?api-version=2023-10-01`,
@@ -25,28 +33,27 @@ module.exports = async function (context, req) {
       {
         headers: {
           "Content-Type": "application/json",
-          "Ocp-Apim-Subscription-Key": apiKey
+          "Ocp-Apim-Subscription-Key": key
         }
       }
     );
 
-    const categories = response.data.categoriesAnalysis || [];
+    const result = response.data;
 
-    const rejected = categories.some(
-      c => c.severity >= 3
+    // Simple rule: reject if ANY category is high confidence
+    const flagged = Object.values(result.categoriesAnalysis || {}).some(
+      c => c.severity >= 4
     );
 
     context.res = {
       status: 200,
       body: {
-        approved: !rejected,
-        analysis: categories
+        safe: !flagged,
+        analysis: result
       }
     };
-
   } catch (err) {
-    context.log("ModerateImage error:", err.response?.data || err.message);
-
+    context.log("Content Safety error:", err.response?.data || err.message);
     context.res = {
       status: 500,
       body: {
