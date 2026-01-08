@@ -12,13 +12,21 @@ module.exports = async function (context, req) {
       return;
     }
 
+    // normalize optional fields
+    const nextTitle =
+      body.title === undefined || body.title === null ? undefined : String(body.title).trim();
+    const nextDescription =
+      body.description === undefined || body.description === null ? undefined : String(body.description).trim();
+    const nextLocation =
+      body.location === undefined || body.location === null ? undefined : String(body.location).trim();
+
     const updated = {
       ...resource,
-      title: body.title ?? resource.title,
-      description: body.description ?? resource.description,
-      location: body.location ?? resource.location,
+      title: nextTitle ?? resource.title,
+      description: nextDescription ?? resource.description,
+      location: nextLocation ?? resource.location,   // ✅ persists + updates
       media: body.media ?? resource.media,
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     };
 
     await container.item(trailId, trailId).replace(updated);

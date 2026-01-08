@@ -6,6 +6,7 @@ module.exports = async function (context, req) {
 
     const title = (body.title || "").trim();
     const description = (body.description || "").trim();
+    const location = (body.location || "").trim();
 
     // allow optional imageUrl (string) and media (array of strings)
     const imageUrl = body.imageUrl ? String(body.imageUrl) : null;
@@ -18,6 +19,10 @@ module.exports = async function (context, req) {
     }
     if (description.length > 500) {
       context.res = { status: 400, body: { error: "Description must be 500 characters or fewer." } };
+      return;
+    }
+    if (location.length > 120) {
+      context.res = { status: 400, body: { error: "Location must be 120 characters or fewer." } };
       return;
     }
     if (imageUrl && imageUrl.length > 1000) {
@@ -34,6 +39,7 @@ module.exports = async function (context, req) {
       trailId,
       title,
       description,
+      location,            // ✅ ADDED
       imageUrl,
       media,
       createdAt: now,

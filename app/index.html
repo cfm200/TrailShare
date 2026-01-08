@@ -4,33 +4,50 @@
   <meta charset="UTF-8" />
   <title>TrailShare MVP</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- IMPORTANT: use external stylesheet -->
   <link rel="stylesheet" href="styles.css" />
 </head>
 
 <body>
   <div class="container">
 
-    <header>
+    <header class="header">
       <h1>TrailShare</h1>
-      <button class="btn btn--ghost" onclick="refresh()">Refresh</button>
+      <button id="refreshBtn" class="btn btn--ghost" type="button">Refresh</button>
     </header>
 
-    <div class="card">
+    <div class="card card--form">
       <h2>Create trail</h2>
 
-      <label>Title</label>
-      <input id="title" />
+      <div class="form">
+        <div class="field">
+          <label class="field__label">Title</label>
+          <input id="title" class="input" placeholder="e.g. The Waterworks, North Belfast" />
+        </div>
 
-      <label>Description</label>
-      <textarea id="description"></textarea>
+        <div class="field">
+          <label class="field__label">Location</label>
+          <input id="location" class="input" placeholder="e.g. Mourne Mountains, NI" />
+        </div>
 
-      <label>Image (optional)</label>
-      <input type="file" id="image" accept="image/*" />
+        <div class="field">
+          <label class="field__label">Description</label>
+          <textarea
+            id="description"
+            class="input textarea"
+            placeholder="What makes this trail special?"
+          ></textarea>
+        </div>
 
-      <button id="createBtn" class="btn btn--primary">Create trail</button>
-      <div id="msg" class="status"></div>
+        <div class="field">
+          <label class="field__label">Image (optional)</label>
+          <input id="image" type="file" accept="image/*" />
+        </div>
+
+        <div class="row">
+          <button id="createBtn" class="btn btn--primary" type="button">Create trail</button>
+          <span id="msg" class="status"></span>
+        </div>
+      </div>
     </div>
 
     <div class="card">
@@ -41,6 +58,29 @@
     <footer class="footer">
       TrailShare MVP · Azure Functions + Cosmos DB · Blob Storage
     </footer>
+  </div>
+
+  <!-- Modal -->
+  <div id="trailModal" class="modal hidden">
+    <div class="modal__backdrop"></div>
+
+    <div class="modal__content">
+      <button class="modal__close" id="closeModal" type="button">✕</button>
+
+      <h2 id="modalTitle"></h2>
+      <p id="modalMeta" class="modal__meta"></p>
+
+      <div id="modalImageWrap" class="modal__imageWrap hidden">
+        <img id="modalImage" alt="" />
+      </div>
+
+      <p id="modalDesc" class="modal__desc"></p>
+
+      <div class="modal__actions">
+        <button id="modalEdit" class="btn btn--ghost" type="button">Edit</button>
+        <button id="modalDelete" class="btn btn--danger" type="button">Delete</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>
