@@ -2,15 +2,28 @@ const {
   BlobServiceClient,
   StorageSharedKeyCredential,
   generateBlobSASQueryParameters,
-  BlobSASPermissions
+  BlobSASPermissions,
 } = require("@azure/storage-blob");
 
 module.exports = async function (context, req) {
+  const correlationId = context.invocationId;
+  const startedAt = Date.now();
+
+  context.log("GetUploadUrl: START", {
+    correlationId,
+    method: req?.method,
+    url: req?.url,
+  });
+
   try {
     const { fileName, contentType } = req.body || {};
 
     if (!fileName) {
-      context.res = { status: 400, body: { error: "fileName is required" } };
+      context.log.warn("GetUploadUrl: validation failed", {
+        correlationId,
+        reason: "fileName is required",
+      });
+      context.res = { status: 400, body: { error: "fileName is required", correlationId } };
       return;
     }
 
@@ -19,12 +32,18 @@ module.exports = async function (context, req) {
     const containerName = process.env.BLOB_CONTAINER_NAME || "media";
 
     if (!accountName || !accountKey) {
-      context.res = { status: 500, body: { error: "Blob config missing" } };
+      context.log.error("GetUploadUrl: Blob config missing", {
+        correlationId,
+        hasAccountName: !!accountName,
+        hasAccountKey: !!accountKey,
+        containerName,
+      });
+      context.res = { status: 500, body: { error: "Blob config missing", correlationId } };
       return;
     }
 
-    const safeName = fileName.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-    const blobName = `${Date.now()}_${safeName}`; // ✅ permanent path
+    const safeName = String(fileName).replace(/[^a-zA-Z0-9.\-_]/g, "_");
+    const blobName = `${Date.now()}_${safeName}`; // permanent path
 
     const cred = new StorageSharedKeyCredential(accountName, accountKey);
     const blobService = new BlobServiceClient(
@@ -36,9 +55,18 @@ module.exports = async function (context, req) {
     const blobClient = containerClient.getBlockBlobClient(blobName);
 
     const startsOn = new Date(Date.now() - 60 * 1000);
-    const expiresOn = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-
+    const expiresOn = new Date(Date.now() + 15 * 60 * 1000);
     const permissions = BlobSASPermissions.parse("cw"); // create + write ONLY
+
+    // Log what we're generating (WITHOUT the SAS itself)
+    context.log("GetUploadUrl: generating SAS", {
+      correlationId,
+      containerName,
+      blobName,
+      permissions: "cw",
+      expiresInMinutes: 15,
+      contentType: contentType || "application/octet-stream",
+    });
 
     const sas = generateBlobSASQueryParameters(
       {
@@ -47,19 +75,44 @@ module.exports = async function (context, req) {
         permissions,
         startsOn,
         expiresOn,
-        contentType: contentType || "application/octet-stream"
+        contentType: contentType || "application/octet-stream",
       },
       cred
     ).toString();
+
+    const durationMs = Date.now() - startedAt;
+
+    context.log("GetUploadUrl: SUCCESS", {
+      correlationId,
+      containerName,
+      blobName,
+      durationMs,
+    });
 
     context.res = {
       status: 200,
       body: {
         uploadUrl: `${blobClient.url}?${sas}`, // used once
-        imagePath: blobName               
-      }
+        imagePath: blobName,
+        telemetry: {
+          correlationId,
+          durationMs,
+          expiresOn: expiresOn.toISOString(),
+          permissions: "cw",
+        },
+      },
     };
   } catch (err) {
-    context.res = { status: 500, body: { error: err.message } };
+    const durationMs = Date.now() - startedAt;
+
+    context.log.error("GetUploadUrl: ERROR", {
+      correlationId,
+      durationMs,
+      message: err?.message,
+      name: err?.name,
+      stack: err?.stack,
+    });
+
+    context.res = { status: 500, body: { error: "Server error", correlationId, detail: err.message } };
   }
 };
