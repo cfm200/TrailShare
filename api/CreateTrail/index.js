@@ -16,12 +16,19 @@ async function analyzeWithVision(context, imageUrl, correlationId) {
   const key = process.env.VISION_KEY;
 
   if (!endpoint || !key || !imageUrl) {
+    context.log("CreateTrail: AI skipped (missing env or imageUrl)", {
+      correlationId,
+      hasEndpoint: !!endpoint,
+      hasKey: !!key,
+      hasImageUrl: !!imageUrl
+    });
     return { caption: null, tags: [] };
   }
 
+  // ✅ Most compatible endpoint for Computer Vision / Azure AI Vision
   const apiUrl =
     endpoint.replace(/\/+$/, "") +
-    "/computervision/imageanalysis:analyze?api-version=2023-02-01-preview&features=caption,tags";
+    "/vision/v3.2/analyze?visualFeatures=Tags,Description";
 
   try {
     const r = await fetch(apiUrl, {
@@ -38,7 +45,8 @@ async function analyzeWithVision(context, imageUrl, correlationId) {
     try { data = JSON.parse(text); } catch { data = { raw: text }; }
 
     if (!r.ok) {
-      context.log("CreateTrail: AI Vision upstream error (non-blocking)", {
+      // 🔥 This will tell you EXACTLY why in Application Insights logs
+      context.log("CreateTrail: AI Vision upstream error", {
         correlationId,
         upstreamStatus: r.status,
         upstream: data
@@ -46,20 +54,29 @@ async function analyzeWithVision(context, imageUrl, correlationId) {
       return { caption: null, tags: [] };
     }
 
-    const caption = data?.captionResult?.text || null;
-    const tags = Array.isArray(data?.tagsResult?.values)
-      ? data.tagsResult.values.slice(0, 6).map(t => t.name).filter(Boolean)
+    const caption = data?.description?.captions?.[0]?.text || null;
+    const tags = Array.isArray(data?.tags)
+      ? data.tags.slice(0, 6).map(t => t.name).filter(Boolean)
       : [];
+
+    context.log("CreateTrail: AI Vision success", {
+      correlationId,
+      caption,
+      tagCount: tags.length,
+      tags
+    });
 
     return { caption, tags };
   } catch (err) {
-    context.log("CreateTrail: AI Vision call failed (non-blocking)", {
+    context.log("CreateTrail: AI Vision call failed (exception)", {
       correlationId,
-      message: err?.message
+      message: err?.message,
+      stack: err?.stack
     });
     return { caption: null, tags: [] };
   }
 }
+
 
 module.exports = async function (context, req) {
   const correlationId =
