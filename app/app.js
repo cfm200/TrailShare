@@ -198,6 +198,7 @@ function openTrailModal(trail) {
   const imageWrap = document.getElementById("modalImageWrap");
   const image = document.getElementById("modalImage");
   const desc = document.getElementById("modalDesc");
+  const tagsWrap = document.getElementById("modalTags");
 
   title.textContent = trail.title;
   meta.textContent =
@@ -212,6 +213,17 @@ function openTrailModal(trail) {
     image.src = "";
   }
 
+  // AI tags in modal
+  if (Array.isArray(trail.aiTags) && trail.aiTags.length) {
+    tagsWrap.innerHTML =
+      trail.aiTags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("");
+    tagsWrap.classList.remove("hidden");
+  } else {
+    tagsWrap.innerHTML = "";
+    tagsWrap.classList.add("hidden");
+  }
+
+  // Description + AI caption
   desc.textContent =
     (trail.aiCaption ? `🤖 ${trail.aiCaption}\n\n` : "") +
     (trail.description || "");

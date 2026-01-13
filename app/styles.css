@@ -301,3 +301,25 @@ textarea{
   border: 1px solid rgba(99,102,241,0.35);
   color: #c7d2fe;
 }
+
+.trail__ai {
+  margin-top: 8px;
+  font-size: 0.9rem;
+  color: #cbd5f5;
+}
+
+.trail__tags {
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  background: rgba(99,102,241,0.15);
+  color: #c7d2fe;
+  border: 1px solid rgba(99,102,241,0.35);
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
