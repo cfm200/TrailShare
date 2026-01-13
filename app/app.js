@@ -106,6 +106,18 @@ async function refresh() {
     const card = document.createElement("div");
     card.className = "trail";
 
+    const aiCaption = trail.aiCaption
+      ? `<p class="trail__ai">🤖 ${escapeHtml(trail.aiCaption)}</p>`
+      : "";
+
+    const aiTags = Array.isArray(trail.aiTags) && trail.aiTags.length
+      ? `
+        <div class="trail__tags">
+          ${trail.aiTags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}
+        </div>
+      `
+      : "";
+
     card.innerHTML = `
       <h3 class="trail__title">${escapeHtml(trail.title)}</h3>
 
@@ -114,17 +126,23 @@ async function refresh() {
         · Uploaded ${formatDate(trail.createdAt)}
       </div>
 
-      <p class="trail__desc">${escapeHtml(trail.description || "")}</p>
-
       ${
-        trail.imageUrl
+        trail.imagePath
           ? `
             <div class="trail__img">
-              <img src="${trail.imageUrl}" alt="Trail image">
+              <img
+                src="https://trailsharewebstorage.blob.core.windows.net/media/${trail.imagePath}"
+                alt="Trail image"
+              >
             </div>
           `
           : ""
       }
+
+      ${aiCaption}
+      ${aiTags}
+
+      <p class="trail__desc">${escapeHtml(trail.description || "")}</p>
 
       <div class="trail__actions">
         <button class="btn" data-edit="${trail.trailId}">Edit</button>
@@ -132,7 +150,6 @@ async function refresh() {
       </div>
     `;
 
-    // Card click → modal (buttons excluded)
     card.addEventListener("click", e => {
       if (e.target.closest("button")) return;
       openTrailModal(trail);
@@ -173,7 +190,7 @@ async function deleteTrail(trailId) {
   refresh();
 }
 
-/* ---------------- MODAL (matches index.html IDs exactly) ---------------- */
+/* ---------------- MODAL ---------------- */
 function openTrailModal(trail) {
   const modal = document.getElementById("trailModal");
   const title = document.getElementById("modalTitle");
@@ -186,19 +203,21 @@ function openTrailModal(trail) {
   meta.textContent =
     `📍 ${trail.location || "Unknown"} · Uploaded ${formatDate(trail.createdAt)}`;
 
-  if (trail.imageUrl) {
-    image.src = trail.imageUrl;
+  if (trail.imagePath) {
+    image.src =
+      `https://trailsharewebstorage.blob.core.windows.net/media/${trail.imagePath}`;
     imageWrap.classList.remove("hidden");
   } else {
     imageWrap.classList.add("hidden");
     image.src = "";
   }
 
-  desc.textContent = trail.description || "";
+  desc.textContent =
+    (trail.aiCaption ? `🤖 ${trail.aiCaption}\n\n` : "") +
+    (trail.description || "");
 
   modal.classList.remove("hidden");
 
-  // modal buttons
   document.getElementById("modalEdit").onclick =
     () => editTrail(trail.trailId);
 
