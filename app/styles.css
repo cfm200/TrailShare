@@ -44,6 +44,7 @@ body{
   border:1px solid var(--border);
   border-radius:var(--radius);
   padding:18px;
+  cursor: pointer;
 }
 
 .card--form{
@@ -322,4 +323,15 @@ textarea{
   padding: 4px 10px;
   border-radius: 999px;
   font-size: 0.75rem;
+}
+
+/* Tags should not block card clicks */
+.trail__tags,
+.trail__tags * {
+  pointer-events: none;
+}
+
+/* Image MUST allow clicks so the card opens */
+.trail__img img {
+  pointer-events: auto;
 }

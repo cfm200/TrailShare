@@ -106,6 +106,9 @@ async function refresh() {
     const card = document.createElement("div");
     card.className = "trail";
 
+    // ✅ ALWAYS open modal when card is clicked
+    card.onclick = () => openTrailModal(trail);
+
     const aiCaption = trail.aiCaption
       ? `<p class="trail__ai">🤖 ${escapeHtml(trail.aiCaption)}</p>`
       : "";
@@ -145,42 +148,25 @@ async function refresh() {
       <p class="trail__desc">${escapeHtml(trail.description || "")}</p>
 
       <div class="trail__actions">
-        <button class="btn" data-edit="${trail.trailId}">Edit</button>
-        <button class="btn btn--danger" data-del="${trail.trailId}">Delete</button>
+        <button
+          class="btn"
+          onclick="event.stopPropagation(); editTrail('${trail.trailId}')"
+        >
+          Edit
+        </button>
+        <button
+          class="btn btn--danger"
+          onclick="event.stopPropagation(); deleteTrail('${trail.trailId}')"
+        >
+          Delete
+        </button>
       </div>
     `;
 
-    card.addEventListener("click", e => {
-      if (e.target.closest("button")) return;
-      openTrailModal(trail);
-    });
-
     list.appendChild(card);
   });
-
-  list.querySelectorAll("[data-del]").forEach(b =>
-    b.onclick = () => deleteTrail(b.dataset.del)
-  );
-
-  list.querySelectorAll("[data-edit]").forEach(b =>
-    b.onclick = () => editTrail(b.dataset.edit)
-  );
 }
 
-async function editTrail(trailId) {
-  const title = prompt("New title?");
-  if (title === null) return;
-
-  const description = prompt("New description?") ?? "";
-
-  await fetch(`${API_BASE}/trails/${encodeURIComponent(trailId)}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ title, description })
-  });
-
-  refresh();
-}
 
 async function deleteTrail(trailId) {
   if (!confirm("Delete this trail?")) return;
